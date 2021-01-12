@@ -40,7 +40,7 @@ const initializeApp = () => {
     castContext = window.cast.framework.CastReceiverContext.getInstance();
     const playerManager = castContext.getPlayerManager();
     // wait 10 seconds so we can get into the devtools
-    playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, details => setTimeout(() => onCastLoad(details), 10000));
+    playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, details => setTimeout(() => onCastLoad(details), 1000));
     // playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, onCastLoad);
 
     const options = window.cast.framework.CastReceiverOptions() || {};
@@ -50,8 +50,8 @@ const initializeApp = () => {
     castContext.start(options);
 
     castContext.addCustomMessageListener(ENJOY_BRIDGE_NS, (message) => {
-        console.log('got it', message);
-        const { data } = message;
+        const { data } = message.data;
+        console.log('got it', data);
         // if (shaka && !videoPlayer) {
         //     console.log('shaka.Player.version', shaka.Player.version);
         //     shaka.polyfill.installAll();

@@ -29,7 +29,7 @@ const providerFetch = async ({ url, request, reqType, resType }) => {
                 resType,
                 reqType,
                 url,
-                ...request,
+                request,
             },
         });
     });
