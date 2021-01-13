@@ -5,14 +5,15 @@ const providerFetch = async ({ url, request, reqType, resType }) => {
             window.removeEventListener('senderResponse', callback);
             console.log('Got response on the receiver');
             console.log(data);
-            const decodedPayload = decodeURIComponent(data.detail.payload);
-            console.log(decodedPayload);
+            const { payload } = data.detail;
+            console.log(payload);
             try {
-                if (!['text', 'arraybuffer'].includes(resType)) {
-                    resolve(JSON.parse(decodedPayload));
-                } else {
-                    resolve(decodedPayload);
-                }
+                resolve(payload);
+                // if (!['text', 'arraybuffer'].includes(resType)) {
+                //     resolve(JSON.parse(decodedPayload));
+                // } else {
+                //     resolve(decodedPayload);
+                // }
             } catch (err) {
                 console.error('senderFetch callback Error:', err);
                 resolve(err);
