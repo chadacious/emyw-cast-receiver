@@ -77,9 +77,17 @@ const initializeApp = () => {
 
     window.castContext.addCustomMessageListener(ENJOY_BRIDGE_NS, (message) => {
         console.log('got it', message);
-        const { payload } = message.data;
-        const customEvent = new CustomEvent('senderResponse', { detail: { payload } });
-        window.dispatchEvent(customEvent);
+        const { payload, payload1, payload2 } = message.data;
+        if (payload) {
+            const customEvent = new CustomEvent('senderResponse', { detail: { payload } });
+            window.dispatchEvent(customEvent);
+        } else if (payload2)  {
+            const customEvent = new CustomEvent('senderResponse', { detail: { payload: partialPayload + payload2 } });
+            window.dispatchEvent(customEvent);
+            partialPayload = null;
+        } else {
+            partialPayload = payload1;
+        }
     });
 
     if (shaka && !window.videoPlayer) {

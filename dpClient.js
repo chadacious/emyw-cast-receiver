@@ -85,7 +85,7 @@ XMLHttpRequest.prototype.send = function (...args) {
             // Update the value of the response
             Object.defineProperty(this, 'response', { value: absoluteRes, writable: false });
             Object.defineProperty(this, 'responseText', { value: absoluteRes, writable: false });
-            this.onreadystatechange({ currentTarget: this });
+            if (this.onreadystatechange) this.onreadystatechange({ currentTarget: this });
         });
         return null;
     }
