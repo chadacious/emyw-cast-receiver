@@ -40,58 +40,52 @@ const providerFetch = async ({ url, request, reqType, resType }) => {
     return resJson;
 };
 
-const XMLHttpRequestOpen = XMLHttpRequest.prototype.open;
-const XMLHttpRequestSend = XMLHttpRequest.prototype.send;
+// const XMLHttpRequestOpen = XMLHttpRequest.prototype.open;
+// const XMLHttpRequestSend = XMLHttpRequest.prototype.send;
 
-// eslint-disable-next-line func-names
-XMLHttpRequest.prototype.open = function (...args) {
-    // record the url for the send intercept
-    this.url = args[0] === 'GET' ? args[1] : '';
-    return XMLHttpRequestOpen.call(this, ...args);
-};
+// // eslint-disable-next-line func-names
+// XMLHttpRequest.prototype.open = function (...args) {
+//     // record the url for the send intercept
+//     this.url = args[0] === 'GET' ? args[1] : '';
+//     return XMLHttpRequestOpen.call(this, ...args);
+// };
 
-// eslint-disable-next-line func-names
-XMLHttpRequest.prototype.send = function (...args) {
-    // If this is a disney playlist hls manifest, then redirect through the native app
-    if (this.url.indexOf('.m3u8') > -1) {
-        console.log('intercepting xhr open', this);
-        providerFetch({
-            url: this.url,
-            request: { method: 'GET', mode: 'cors' },
-            resType: 'text',
-        }).then((res) => {
-            Object.defineProperty(this, 'readyState', { value: 4, writable: false });
-            Object.defineProperty(this, 'status', { value: 200, writable: false });
-            Object.defineProperty(this, 'responseType', { value: 'text', writable: false });
-            // switch relative paths to absolute within the manifest
-            const absoluteRes = res
-                .replace(
-                    /(URI=")([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/gm,
-                    `$1${this.url.substring(0, this.url.lastIndexOf('/'))}/$2`,
-                )
-                .replace(
-                    /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/gm,
-                    `${this.url.substring(0, this.url.lastIndexOf('/'))}/$1`,
-                );
-                // .replace(
-                //     /^#EXT-X-KEY:METHOD=SAMPLE-AES-CTR,KEYFORMAT="PRMNAGRA".*\n?/m,
-                //     '',
-                // )
-                // .replace(
-                //     /^#EXT-X-KEY:METHOD=SAMPLE-AES-CTR,KEYFORMAT="com.microsoft.playready".*\n?/m,
-                //     '',
-                // );
-            console.log(absoluteRes);
-            // Update the value of the response
-            Object.defineProperty(this, 'response', { value: absoluteRes, writable: false });
-            Object.defineProperty(this, 'responseText', { value: absoluteRes, writable: false });
-            if (this.onreadystatechange) this.onreadystatechange({ currentTarget: this });
-        });
-        return null;
-    }
-    console.log('not intercepting xhr open', this.url);
-    return XMLHttpRequestSend.call(this, ...args);
-};
+// // eslint-disable-next-line func-names
+// XMLHttpRequest.prototype.send = function (...args) {
+//     // If this is a disney playlist hls manifest, then redirect through the native app
+//     if (this.url.indexOf('.m3u8') > -1) {
+//         console.log('intercepting xhr open', this);
+//         providerFetch({
+//             url: this.url,
+//             request: { method: 'GET', mode: 'cors' },
+//             resType: 'text',
+//         }).then((res) => {
+//             Object.defineProperty(this, 'readyState', { value: 4, writable: false });
+//             Object.defineProperty(this, 'status', { value: 200, writable: false });
+//             Object.defineProperty(this, 'responseType', { value: 'text', writable: false });
+//             // switch relative paths to absolute within the manifest
+//             const absoluteRes = res
+//                 .replace(
+//                     /(URI=")([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/gm,
+//                     `$1${this.url.substring(0, this.url.lastIndexOf('/'))}/$2`,
+//                 )
+//                 .replace(
+//                     /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/gm,
+//                     `${this.url.substring(0, this.url.lastIndexOf('/'))}/$1`,
+//                 )
+//                 .replace(/^.*KEYFORMAT="PRMNAGRA".*\n?/gm, '')
+//                 .replace(/^.*KEYFORMAT="com.microsoft.playready".*\n?/gm, '');
+//             console.log(absoluteRes);
+//             // Update the value of the response
+//             Object.defineProperty(this, 'response', { value: absoluteRes, writable: false });
+//             Object.defineProperty(this, 'responseText', { value: absoluteRes, writable: false });
+//             if (this.onreadystatechange) this.onreadystatechange({ currentTarget: this });
+//         });
+//         return null;
+//     }
+//     console.log('not intercepting xhr open', this.url);
+//     return XMLHttpRequestSend.call(this, ...args);
+// };
 
 const uuidv4 = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = Math.random() * 16 | 0; const
@@ -151,7 +145,9 @@ const getDisneyplusManifest = async (videoId) => {
         // make all urls fully qualified instead of relative
         let manifest = rawManifest
             .replace(/URI="r\//gm, `URI="${path.substring(0, path.lastIndexOf('/'))}/r/`)
-            .replace(/^r\//gm, `${path.substring(0, path.lastIndexOf('/'))}/r/`);
+            .replace(/^r\//gm, `${path.substring(0, path.lastIndexOf('/'))}/r/`)
+            .replace(/^.*KEYFORMAT="PRMNAGRA".*\n?/gm, '')
+            .replace(/^.*KEYFORMAT="com.microsoft.playready".*\n?/gm, '');
         console.log(manifest);
 
         // If we are on certain fire sticks, then we will need to remove the eac-3 codec since
@@ -163,14 +159,25 @@ const getDisneyplusManifest = async (videoId) => {
         // And we "know" that AFTT (Gen2 stick) doesn't support it. These others are guesses.
 
         // Also it was discovered that the eac-3 prevents playback rate control from several devices. So now we just always remove it.
-        console.log('modifying manifest to remove eac-3 codec');
-        // const fixedManifest = [];
+        // console.log('modifying manifest to remove eac-3 codec');
+        let fixedManifest = [];
         // manifest.split('\n').forEach((line) => {
         //     if (line.indexOf(',GROUP-ID="eac-3",') === -1) {
         //         fixedManifest.push(`${line}\n`);
         //     }
         // });
         // manifest = fixedManifest.join('');
+
+        // For now, we will only support English audio. Consider how supporting multiple languages will create problems
+        // for our manually tagged shows with mute being potentially in the wrong places.
+        // Also, by removing all the other audio language options, we speed up the processing of the manifest considerably
+        fixedManifest = [];
+        manifest.split('\n').forEach((line) => {
+            if (line.indexOf('NAME') === -1 || line.indexOf('NAME="English"') > -1) {
+                fixedManifest.push(`${line}\n`);
+            }
+        });
+        manifest = fixedManifest.join('');
 
         playlistJson.fixed_manifest = manifest;
         console.log(playlistJson);

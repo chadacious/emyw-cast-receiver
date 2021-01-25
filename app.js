@@ -11,6 +11,14 @@ const onCastLoad = async (details) => {
         manifest = playlistJson.fixed_manifest;
         console.log(manifest);
         window.videoPlayer.configure({
+            preferredAudioLanguage: 'en',
+            preferredTextLanguage: 'en',
+            // streaming: {
+            //     inaccurateManifestTolerance: 0,
+            // },
+            // abr: {
+            //     defaultBandwidthEstimate: 500000,
+            // },
             drm: {
                 logLicenseExchange: true,
                 servers: {
@@ -34,22 +42,19 @@ const onCastLoad = async (details) => {
 
 };
 
-const EnjoyDrmScheme = async (uri, request, requestType) => {
-    console.log('EnjoyDrmScheme', uri, request, requestType);
-    licenseRequest = request.body;
-    return new shaka.util.AbortableOperation(
-        new Promise(() => (null)),
-        () => { },
-    );
-};
-
-const drmLicenseResponse = async (type, response) => {
-    if (type === shaka.net.NetworkingEngine.RequestType.LICENSE) {
+const EnjoyDrmScheme = async (uri, request, requestType, progressUpdated) => {
+    console.log('EnjoyDrmScheme', uri, request, requestType, progressUpdated);
+    const licenseRequest = request.body;
+    const promise = new Promise(async (resolve) => {
         const challengeBase64 = btoa(String.fromCharCode(...new Uint8Array(licenseRequest)));
         const license = await getDisneyplusLicense(challengeBase64); // event.target.sessionId);
         const licenseAB = Uint8Array.from(atob(license), c => c.charCodeAt(0));
-        response.data = licenseAB.buffer;
-    }
+        resolve({ data: licenseAB.buffer });
+    });
+    return new shaka.util.AbortableOperation(
+        promise,
+        () => { },
+    );
 };
 
 const onError = (error) => {
@@ -66,8 +71,8 @@ const initializeApp = async () => {
     // setup the cast receiver to listen for the cast session start
     window.castContext = window.cast.framework.CastReceiverContext.getInstance();
     const playerManager = castContext.getPlayerManager();
-    playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, details => setTimeout(() => onCastLoad(details), 10000));
-    // playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, onCastLoad);
+    // playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, details => setTimeout(() => onCastLoad(details), 10000));
+    playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, onCastLoad);
 
     const options = window.cast.framework.CastReceiverOptions() || {};
     options.customNamespaces = {
@@ -126,16 +131,16 @@ const initializeApp = async () => {
 
         window.videoPlayer = new shaka.Player();
         shaka.log.setLevel(shaka.log.Level.V2);
-        window.videoPlayer.getNetworkingEngine().registerResponseFilter(drmLicenseResponse);
+        // window.videoPlayer.getNetworkingEngine().registerResponseFilter(drmLicenseResponse);
         window.videoPlayer.addEventListener('error', onErrorEvent);
         console.log('initial configuration', window.videoPlayer.getConfiguration());
         // window.videoPlayer.configure('abr.enabled', false);
-        window.videoPlayer.configure('streaming.stallEnabled', false);
+        // window.videoPlayer.configure('streaming.stallEnabled', false);
         // window.videoPlayer.configure('drm.logLicenseExchange', true);
         // window.videoPlayer.configure('streaming.jumpLargeGaps', true);
         // window.videoPlayer.configure('manifest.hls.ignoreTextStreamFailures', true);
         // window.videoPlayer.configure('manifest.hls.useFullSegmentsForStartTime', true);
-        window.videoPlayer.configure('streaming.failureCallback', (res) => console.log('failureCallback:', res));
+        // window.videoPlayer.configure('streaming.failureCallback', (res) => console.log('failureCallback:', res));
         // window.videoPlayer.configure('streaming.startAtSegmentBoundary', true);
         // window.videoPlayer.configure('streaming.forceTransmuxTS', true);
         // window.videoPlayer.configure('streaming.ignoreTextStreamFailures', true);
