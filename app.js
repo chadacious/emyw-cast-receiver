@@ -12,6 +12,7 @@ const onCastLoad = async (details) => {
         console.log(manifest);
         window.videoPlayer.configure({
             drm: {
+                logLicenseExchange: true,
                 servers: {
                     'com.widevine.alpha': 'drm:https://global.edge.bamgrid.com/widevine/v1/obtain-license',
                 },
@@ -26,6 +27,7 @@ const onCastLoad = async (details) => {
     try {
         await window.videoPlayer.attach(video);
         await window.videoPlayer.load(objectURL, null, 'application/x-mpegURL');
+        // window.videoPlayer.getMediaElement().play();
     } catch (error) {
         console.log(error);
     }
@@ -60,7 +62,7 @@ const onErrorEvent = (event) => {
     onError(event.detail);
 };
 
-const initializeApp = () => {
+const initializeApp = async () => {
     // setup the cast receiver to listen for the cast session start
     window.castContext = window.cast.framework.CastReceiverContext.getInstance();
     const playerManager = castContext.getPlayerManager();
@@ -72,7 +74,7 @@ const initializeApp = () => {
         [ENJOY_BRIDGE_NS]: window.cast.framework.system.MessageType.JSON,
     };
     options.skipPlayersLoad = true;
-
+    options.disableIdleTimeout = true;
     window.castContext.start(options);
 
     window.castContext.addCustomMessageListener(ENJOY_BRIDGE_NS, (message) => {
@@ -97,9 +99,57 @@ const initializeApp = () => {
         shaka.net.NetworkingEngine.registerScheme('blob', shaka.net.HttpXHRPlugin.parse);
         const video = document.getElementById('video');
         console.log(video);
-        window.videoPlayer = new shaka.Player(video);
+        // video.addEventListener('abort', (res, res2) => console.log('abort', res, res2));
+        // video.addEventListener('canplay', (res, res2) => console.log('canplay', res, res2));
+        // video.addEventListener('canplaythrough', (res, res2) => console.log('canplaythrough', res, res2));
+        // video.addEventListener('durationchange', (res, res2) => console.log('durationchange', res, res2));
+        // video.addEventListener('emptied', (res, res2) => console.log('emptied', res, res2));
+        // video.addEventListener('ended', (res, res2) => console.log('ended', res, res2));
+        // video.addEventListener('error', (res, res2) => console.log('error', res, res2));
+        // video.addEventListener('loadeddata', (res, res2) => console.log('loadeddata', res, res2));
+        // video.addEventListener('loadedmetadata', (res, res2) => console.log('loadedmetadata', res, res2));
+        // video.addEventListener('loadstart', (res, res2) => console.log('loadstart', res, res2));
+        // video.addEventListener('pause', (res, res2) => console.log('pause', res, res2));
+        // video.addEventListener('play', (res, res2) => console.log('play', res, res2));
+        // video.addEventListener('playing', (res, res2) => console.log('playing', res, res2));
+        // video.addEventListener('progress', (res, res2) => { console.log('progress', res, res2); console.log(res.loaded, res.total)});
+        // video.addEventListener('ratechange', (res, res2) => console.log('ratechange', res, res2));
+        // video.addEventListener('seeked', (res, res2) => console.log('seeked', res, res2));
+        // video.addEventListener('seeking', (res, res2) => console.log('seeking', res, res2));
+        // video.addEventListener('stalled', (res, res2) => console.log('stalled', res, res2));
+        // video.addEventListener('suspend', (res, res2) => console.log('suspend', res, res2));
+        // video.addEventListener('timeupdate', (res, res2) => console.log('timeupdate', res, res2));
+        // video.addEventListener('volumechange', (res, res2) => console.log('volumechange', res, res2));
+        // video.addEventListener('waiting', (res, res2) => console.log('waiting', res, res2));
+
+
+
+        window.videoPlayer = new shaka.Player();
+        shaka.log.setLevel(shaka.log.Level.V2);
         window.videoPlayer.getNetworkingEngine().registerResponseFilter(drmLicenseResponse);
         window.videoPlayer.addEventListener('error', onErrorEvent);
+        console.log('initial configuration', window.videoPlayer.getConfiguration());
+        // window.videoPlayer.configure('abr.enabled', false);
+        window.videoPlayer.configure('streaming.stallEnabled', false);
+        // window.videoPlayer.configure('drm.logLicenseExchange', true);
+        // window.videoPlayer.configure('streaming.jumpLargeGaps', true);
+        // window.videoPlayer.configure('manifest.hls.ignoreTextStreamFailures', true);
+        // window.videoPlayer.configure('manifest.hls.useFullSegmentsForStartTime', true);
+        window.videoPlayer.configure('streaming.failureCallback', (res) => console.log('failureCallback:', res));
+        // window.videoPlayer.configure('streaming.startAtSegmentBoundary', true);
+        // window.videoPlayer.configure('streaming.forceTransmuxTS', true);
+        // window.videoPlayer.configure('streaming.ignoreTextStreamFailures', true);
+        // window.videoPlayer.configure('manifest.disableVideo', true);
+        // window.videoPlayer.configure('manifest.disableText', true);
+        // window.videoPlayer.configure({
+        //     drm: {
+        //         servers: {
+        //             'com.widevine.alpha': 'drm:https://global.edge.bamgrid.com/widevine/v1/obtain-license',
+        //         },
+        //     },
+        // });
+        // console.log('updated configuration', window.videoPlayer.getConfiguration());
+        // await window.videoPlayer.attach(video);
     }
 
     console.log('app initialized');

@@ -164,13 +164,13 @@ const getDisneyplusManifest = async (videoId) => {
 
         // Also it was discovered that the eac-3 prevents playback rate control from several devices. So now we just always remove it.
         console.log('modifying manifest to remove eac-3 codec');
-        const fixedManifest = [];
-        manifest.split('\n').forEach((line) => {
-            if (line.indexOf(',GROUP-ID="eac-3",') === -1) {
-                fixedManifest.push(`${line}\n`);
-            }
-        });
-        manifest = fixedManifest.join('');
+        // const fixedManifest = [];
+        // manifest.split('\n').forEach((line) => {
+        //     if (line.indexOf(',GROUP-ID="eac-3",') === -1) {
+        //         fixedManifest.push(`${line}\n`);
+        //     }
+        // });
+        // manifest = fixedManifest.join('');
 
         playlistJson.fixed_manifest = manifest;
         console.log(playlistJson);
